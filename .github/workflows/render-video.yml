@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "render.py"
+      - "render.py"\n      - "download_noaa.py"
       - "clip_manifest.csv"
       - ".github/workflows/render-video.yml"
       - "assets/clips/**"
