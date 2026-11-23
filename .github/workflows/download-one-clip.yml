@@ -1,0 +1,45 @@
+name: Download one verified footage clip
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/download-one-clip.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  download-one:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download the Komodo dragon clip only
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p output
+          curl -fL --retry 3 --retry-delay 2 \
+            "https://commons.wikimedia.org/wiki/Special:Redirect/file/Komodo_Dragon.webm" \
+            -o /tmp/komodo-source.webm
+          test "$(stat -c%s /tmp/komodo-source.webm)" -gt 1000000
+          ffmpeg -y -i /tmp/komodo-source.webm -an -c:v libx264 -preset medium \
+            -crf 20 -pix_fmt yuv420p -movflags +faststart \
+            output/02_komodo-dragon_hook.mp4
+          ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height \
+            -of default=noprint_wrappers=1 output/02_komodo-dragon_hook.mp4
+          test -s output/02_komodo-dragon_hook.mp4
+          printf '%s\n' \
+            'Title: Komodo Dragon.webm' \
+            'Creator: Joseolgon' \
+            'Source: https://commons.wikimedia.org/wiki/File:Komodo_Dragon.webm' \
+            'License: Creative Commons Attribution-ShareAlike 3.0 Unported' \
+            'Changes: Converted from WebM to MP4; audio removed.' \
+            > output/ATTRIBUTION.txt
+          echo "Downloaded and verified exactly one clip."
+          du -h output/02_komodo-dragon_hook.mp4
+      - name: Upload this single clip
+        uses: actions/upload-artifact@v4
+        with:
+          name: clip-02-komodo-dragon
+          path: output/
+          if-no-files-found: error
