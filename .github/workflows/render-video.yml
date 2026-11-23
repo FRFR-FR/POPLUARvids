@@ -3,7 +3,8 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "render.py"\n      - "download_noaa.py"
+      - "render.py"
+      - "download_noaa.py"
       - "clip_manifest.csv"
       - ".github/workflows/render-video.yml"
       - "assets/clips/**"
@@ -22,6 +23,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg
+      - name: Download the explicitly listed NOAA clips
+        run: python download_noaa.py
       - name: Validate footage and render
         run: python render.py
       - name: Upload finished MP4
