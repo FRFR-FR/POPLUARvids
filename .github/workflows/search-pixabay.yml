@@ -1,0 +1,45 @@
+name: Search Pixabay animal footage
+on:
+  push:
+    paths:
+      - "search_pixabay.py"
+      - ".github/workflows/search-pixabay.yml"
+  workflow_dispatch:
+jobs:
+  search:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Restore Pixabay search cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .pixabay_cache
+          key: pixabay-search-${{ github.run_id }}
+          restore-keys: |
+            pixabay-search-
+      - name: Search Pixabay video API
+        env:
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+        run: python search_pixabay.py
+      - name: Save Pixabay search cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .pixabay_cache
+          key: pixabay-search-${{ github.run_id }}
+      - name: Upload candidate shortlist
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pixabay-animal-candidates
+          path: |
+            output/pixabay_candidates.csv
+            output/pixabay_search_report.json
+          if-no-files-found: warn
+          retention-days: 7
