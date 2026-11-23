@@ -1,0 +1,59 @@
+name: Build Deep Sea Creatures Video
+
+on:
+  push:
+    branches:
+      - run/deep-sea-creatures
+    paths:
+      - deep_sea_video.py
+      - requirements-deep-sea.txt
+      - .github/workflows/deep-sea-video.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-deep-sea.txt
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          ffmpeg -version
+          ffprobe -version
+      - name: Install Python dependencies
+        run: python -m pip install --upgrade pip && pip install -r requirements-deep-sea.txt
+      - name: Verify Pixabay key
+        env:
+          PIXABAY_KEY: ${{ secrets.PIXABAY_KEY }}
+        run: |
+          if [ -z "$PIXABAY_KEY" ]; then
+            echo "::error::PIXABAY_KEY repository secret is missing."
+            exit 1
+          fi
+      - name: Build video
+        env:
+          PIXABAY_KEY: ${{ secrets.PIXABAY_KEY }}
+        run: python deep_sea_video.py --out final.mp4 --work work
+      - name: Upload video and supporting files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deep-sea-creatures-output
+          path: |
+            final.mp4
+            captions.srt
+            manifest.json
+          if-no-files-found: warn
+          retention-days: 7
