@@ -2,6 +2,11 @@ name: Sequential verified footage downloads
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - "approved_download_queue.csv"
+      - "scripts/download_sequential.py"
+      - ".github/workflows/download-sequential.yml"
 
 permissions:
   contents: read
@@ -26,8 +31,8 @@ jobs:
       - name: Download each approved clip in sequence
         run: python3 scripts/download_sequential.py
 
-      - name: Upload completed clips
-        if: success()
+      - name: Upload completed clips, including successful fallbacks
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: sequential-verified-footage
