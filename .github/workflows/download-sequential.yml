@@ -2,11 +2,6 @@ name: Sequential verified footage downloads
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - "approved_download_queue.csv"
-      - "scripts/download_sequential.py"
-      - ".github/workflows/download-sequential.yml"
 
 permissions:
   contents: read
