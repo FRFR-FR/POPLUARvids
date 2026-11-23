@@ -14,7 +14,7 @@ What it does
 Setup
   pip install requests edge-tts
   FFmpeg + ffprobe must be installed and on your PATH.
-  export PIXABAY_KEY=your_key      (Windows: set PIXABAY_KEY=your_key)
+  export PIXABAY_API_KEY=your_key      (Windows: set PIXABAY_API_KEY=your_key)
 
 Run
   python deep_sea_video.py --dry-run          # search only, preview what it finds
@@ -403,7 +403,7 @@ def write_srt(durs, path):
 # ---------------------------------------------------------------- main
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--key", default=os.environ.get("PIXABAY_KEY"), help="Pixabay API key")
+    ap.add_argument("--key", default=os.environ.get("PIXABAY_API_KEY"), help="Pixabay API key")
     ap.add_argument("--voiceover", help="your own voiceover file (mp3/wav/m4a)")
     ap.add_argument("--voice", default="en-US-GuyNeural", help="edge-tts voice")
     ap.add_argument("--rate", default="-8%", help="edge-tts speed, e.g. -8%% slows it down")
@@ -414,7 +414,7 @@ def main():
     args = ap.parse_args()
 
     if not args.key:
-        sys.exit("Set PIXABAY_KEY or pass --key.")
+        sys.exit("Set PIXABAY_API_KEY or pass --key.")
     work = Path(args.work)
     work.mkdir(parents=True, exist_ok=True)
 
