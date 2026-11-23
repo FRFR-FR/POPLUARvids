@@ -36,15 +36,15 @@ jobs:
         run: python -m pip install --upgrade pip && pip install -r requirements-deep-sea.txt
       - name: Verify Pixabay key
         env:
-          PIXABAY_KEY: ${{ secrets.PIXABAY_KEY }}
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
         run: |
-          if [ -z "$PIXABAY_KEY" ]; then
-            echo "::error::PIXABAY_KEY repository secret is missing."
+          if [ -z "$PIXABAY_API_KEY" ]; then
+            echo "::error::PIXABAY_API_KEY repository secret is missing."
             exit 1
           fi
       - name: Build video
         env:
-          PIXABAY_KEY: ${{ secrets.PIXABAY_KEY }}
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
         run: python deep_sea_video.py --out final.mp4 --work work
       - name: Upload video and supporting files
         if: always()
