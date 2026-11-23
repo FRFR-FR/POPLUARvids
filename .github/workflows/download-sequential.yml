@@ -1,0 +1,41 @@
+name: Sequential verified footage downloads
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "approved_download_queue.csv"
+      - "scripts/download_sequential.py"
+      - ".github/workflows/download-sequential.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sequential-footage-downloads
+  cancel-in-progress: false
+
+jobs:
+  download-sequentially:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Check out download queue
+        uses: actions/checkout@v4
+
+      - name: Install video tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Download each approved clip in sequence
+        run: python3 scripts/download_sequential.py
+
+      - name: Upload completed clips
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sequential-verified-footage
+          path: output/
+          if-no-files-found: error
+          retention-days: 90
