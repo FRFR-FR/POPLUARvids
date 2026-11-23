@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 queue = Path("approved_download_queue.csv")
 out = Path("output")
 out.mkdir(exist_ok=True)
-allowed_hosts = {"archive.oceanexplorer.noaa.gov", "commons.wikimedia.org"}
+allowed_hosts = {"archive.oceanexplorer.noaa.gov", "oceanexplorer.noaa.gov", "commons.wikimedia.org"}
 rows = list(csv.DictReader(queue.open(newline="", encoding="utf-8")))
 if not rows:
     print("Queue empty: no approved source URLs are waiting.")
