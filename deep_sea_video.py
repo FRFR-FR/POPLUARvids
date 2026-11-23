@@ -265,9 +265,20 @@ def make_audio(args, work):
         mp3, m4a = adir / f"{i:02}.mp3", adir / f"{i:02}.m4a"
         if not m4a.exists():
             print(f"  voice: {s['title']}")
-            asyncio.run(_tts(s["text"], mp3, args.voice, args.rate))
-            run(["ffmpeg", "-y", "-i", mp3, "-af", f"apad=pad_dur={GAP}",
-                 "-ar", "44100", "-ac", "2", "-c:a", "aac", m4a])
+            try:
+                asyncio.run(_tts(s["text"], mp3, args.voice, args.rate))
+                run(["ffmpeg", "-y", "-i", mp3, "-af", f"apad=pad_dur={GAP}",
+                     "-ar", "44100", "-ac", "2", "-c:a", "aac", m4a])
+            except Exception as exc:
+                # Edge TTS can reject GitHub-hosted runner connections (HTTP 403).
+                # Fall back to offline eSpeak NG so the render can continue without an API.
+                print(f"  Edge TTS unavailable ({exc}); using offline eSpeak NG.")
+                wav = adir / f"{i:02}.wav"
+                run(["espeak-ng", "-v", "en-us", "-s", "155", "-w", wav, s["text"]])
+                run(["ffmpeg", "-y", "-i", wav, "-af", f"apad=pad_dur={GAP}",
+                     "-ar", "44100", "-ac", "2", "-c:a", "aac", m4a])
+                wav.unlink(missing_ok=True)
+                mp3.unlink(missing_ok=True)
         parts.append(m4a)
         durs.append(duration(m4a))
     out = work / "voice.m4a"
