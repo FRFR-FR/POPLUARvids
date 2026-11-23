@@ -1,0 +1,47 @@
+name: Download one verified footage clip - grizzly bear
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/download-clip-03.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  download-one:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download and verify the grizzly bear clip only
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          mkdir -p output
+          curl -fL --retry 3 --retry-delay 2 \
+            "https://commons.wikimedia.org/wiki/Special:Redirect/file/Grizzly_bears_(Ursus_arctos)_in_Alaska.webm" \
+            -o /tmp/grizzly-source.webm
+          test "$(stat -c%s /tmp/grizzly-source.webm)" -gt 1000000
+          ffmpeg -y -i /tmp/grizzly-source.webm -an -c:v libx264 -preset medium \
+            -crf 20 -pix_fmt yuv420p -movflags +faststart \
+            output/03_grizzly-bear_hook.mp4
+          ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height \
+            -of default=noprint_wrappers=1 output/03_grizzly-bear_hook.mp4
+          test -s output/03_grizzly-bear_hook.mp4
+          printf '%s\n' \
+            'Title: Grizzly bears (Ursus arctos) in Alaska.webm' \
+            'Creator: The Nature Box' \
+            'Source: https://commons.wikimedia.org/wiki/File:Grizzly_bears_(Ursus_arctos)_in_Alaska.webm' \
+            'License: Creative Commons Attribution 3.0 Unported' \
+            'Changes: Converted from WebM to MP4; audio removed.' \
+            > output/ATTRIBUTION.txt
+          echo "Downloaded and verified exactly one grizzly bear clip."
+          du -h output/03_grizzly-bear_hook.mp4
+      - name: Upload this single clip
+        uses: actions/upload-artifact@v4
+        with:
+          name: clip-03-grizzly-bear
+          path: output/
+          if-no-files-found: error
