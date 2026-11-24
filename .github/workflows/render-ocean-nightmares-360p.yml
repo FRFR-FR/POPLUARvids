@@ -35,7 +35,7 @@ jobs:
         with:
           name: ocean-nightmares-720p-video-and-sources
           run-id: 45362503630
-          github-token: \${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           path: downloads/720p
 
       - name: Create 360p ultra-compressed MP4 and narration script
