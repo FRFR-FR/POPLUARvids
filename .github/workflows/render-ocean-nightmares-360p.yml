@@ -1,0 +1,52 @@
+name: Create ultra-compressed Ocean Nightmares — 360p
+
+on:
+  push:
+    branches:
+      - ocean-nightmares-production
+    paths:
+      - "scripts/compress_ocean_nightmares_360p.py"
+      - ".github/workflows/render-ocean-nightmares-360p.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: ocean-nightmares-360p-export
+  cancel-in-progress: false
+
+jobs:
+  compress-360p:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Check out the production branch
+        uses: actions/checkout@v4
+
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Download the completed 720p render without changing the original
+        uses: actions/download-artifact@v4
+        with:
+          name: ocean-nightmares-720p-video-and-sources
+          run-id: 45362503630
+          github-token: \${{ secrets.GITHUB_TOKEN }}
+          path: downloads/720p
+
+      - name: Create 360p ultra-compressed MP4 and narration script
+        run: python scripts/compress_ocean_nightmares_360p.py
+
+      - name: Upload separate 360p package
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ocean-nightmares-360p-ultra-compressed
+          path: production_output_360p/
+          if-no-files-found: warn
+          retention-days: 90
+          compression-level: 1
