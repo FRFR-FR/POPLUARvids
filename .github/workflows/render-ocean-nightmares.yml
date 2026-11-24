@@ -8,6 +8,7 @@ on:
       - "sources.txt"
       - "scripts/render_ocean_nightmares.py"
       - ".github/workflows/render-ocean-nightmares.yml"
+      - "assets/audio/**"
   workflow_dispatch:
 
 permissions:
@@ -47,9 +48,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: downloads/noaa
 
-      - name: Build 15-minute video using Liam
-        env:
-          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+      - name: Assemble the 15-minute visual edit and mix supplied Liam audio if present
         run: python scripts/render_ocean_nightmares.py
 
       - name: Upload finished video, separate credits and build report
