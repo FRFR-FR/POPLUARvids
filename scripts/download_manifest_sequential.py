@@ -187,46 +187,49 @@ def main():
         accepted = False
         last_error = "No suitable candidate found"
         for species, aliases in species_for(filename, row["animal"]):
-            base_query = f"{species} {shot_terms(row['shot'])}"
-            for page in range(1, MAX_PAGES + 1):
-                try:
-                    data = api_search(base_query, page)
-                except (HTTPError, URLError, TimeoutError, Exception) as exc:
-                    last_error = f"Pixabay search failed: {type(exc).__name__}: {exc}"
-                    print(f"  Search issue for {base_query} page {page}: {last_error}", flush=True)
-                    continue
-                candidates = data.get("hits", [])
-                for hit in candidates:
-                    pid = str(hit.get("id", ""))
-                    if not pid or pid in used_ids:
+            queries = list(dict.fromkeys([f"{species} {shot_terms(row['shot'])}", species] + aliases))
+            for query in queries:
+                for page in range(1, MAX_PAGES + 1):
+                    try:
+                        data = api_search(query, page)
+                    except Exception as exc:
+                        last_error = f"Pixabay search failed: {type(exc).__name__}: {exc}"
+                        print(f"  Search issue for {query} page {page}: {last_error}", flush=True)
                         continue
-                    if not tag_matches(hit.get("tags", ""), aliases):
-                        continue
-                    used_ids.add(pid)
-                    print(f"[{index}/{total}] {filename}: trying {species} candidate {pid}", flush=True)
-                    ok, detail = download_candidate(hit, row, destination)
-                    if not ok:
-                        last_error = detail
-                        print(f"  Candidate {pid} rejected: {detail}; trying next candidate.", flush=True)
-                        continue
+                    candidates = data.get("hits", [])
+                    for hit in candidates:
+                        pid = str(hit.get("id", ""))
+                        if not pid or pid in used_ids:
+                            continue
+                        if not tag_matches(hit.get("tags", ""), aliases):
+                            continue
+                        used_ids.add(pid)
+                        print(f"[{index}/{total}] {filename}: trying {species} candidate {pid}", flush=True)
+                        ok, detail = download_candidate(hit, row, destination)
+                        if not ok:
+                            last_error = detail
+                            print(f"  Candidate {pid} rejected: {detail}; trying next candidate.", flush=True)
+                            continue
 
-                    source_page = hit.get("pageURL", "")
-                    contributor = hit.get("user", "")
-                    with (OUT / "ATTRIBUTION.txt").open("a", encoding="utf-8") as f:
-                        f.write(
-                            f"File: {filename}\nRequested animal: {row['animal']}\n"
-                            f"Shot: {row['shot']}\nPixabay page: {source_page}\n"
-                            f"Contributor: {contributor}\nPixabay ID: {pid}\n"
-                            f"License: Pixabay Content License (check the linked item page)\n"
-                            "Changes: converted to silent H.264 MP4.\n\n"
-                        )
-                    results.append({"filename": filename, "animal": row["animal"], "status": "downloaded", "source": source_page, "pixabay_id": pid, "details": detail})
-                    print(f"  VERIFIED {filename}: {detail}. Moving to the next manifest item.", flush=True)
-                    accepted = True
-                    break
+                        source_page = hit.get("pageURL", "")
+                        contributor = hit.get("user", "")
+                        with (OUT / "ATTRIBUTION.txt").open("a", encoding="utf-8") as f:
+                            f.write(
+                                f"File: {filename}\\nRequested animal: {row['animal']}\\n"
+                                f"Shot: {row['shot']}\\nPixabay page: {source_page}\\n"
+                                f"Contributor: {contributor}\\nPixabay ID: {pid}\\n"
+                                f"License: Pixabay Content License (check the linked item page)\\n"
+                                "Changes: converted to silent H.264 MP4.\\n\\n"
+                            )
+                        results.append({"filename": filename, "animal": row["animal"], "status": "downloaded", "source": source_page, "pixabay_id": pid, "details": detail})
+                        print(f"  VERIFIED {filename}: {detail}. Moving to the next manifest item.", flush=True)
+                        accepted = True
+                        break
+                    if accepted:
+                        break
+                    time.sleep(1)
                 if accepted:
                     break
-                time.sleep(1)
             if accepted:
                 break
         if not accepted:
