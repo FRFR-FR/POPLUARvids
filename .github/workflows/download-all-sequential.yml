@@ -1,0 +1,58 @@
+name: Download all animal footage sequentially
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "clip_manifest.csv"
+      - "scripts/download_manifest_sequential.py"
+      - ".github/workflows/download-all-sequential.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: all-footage-sequential
+  cancel-in-progress: false
+
+jobs:
+  download-all:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - name: Check out manifest and downloader
+        uses: actions/checkout@v4
+
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Download manifest clips one at a time with automatic fallbacks
+        env:
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+        run: python scripts/download_manifest_sequential.py
+
+      - name: Upload every successful download and the status report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: animal-footage-sequential-downloads
+          path: output/clips/
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Print final download summary
+        if: always()
+        run: |
+          if [ -f output/clips/download_report.csv ]; then
+            echo "### Sequential footage download report" >> "$GITHUB_STEP_SUMMARY"
+            cat output/clips/download_report.csv >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No report was produced. Check the download step logs." >> "$GITHUB_STEP_SUMMARY"
+          fi
