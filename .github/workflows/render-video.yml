@@ -1,13 +1,6 @@
-name: Render 15-minute video
+name: Render 15-minute ocean-creatures video
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - "render.py"
-      - "download_noaa.py"
-      - "clip_manifest.csv"
-      - ".github/workflows/render-video.yml"
-      - "assets/clips/**"
 jobs:
   render:
     runs-on: ubuntu-latest
@@ -23,15 +16,13 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg
-      - name: Download the explicitly listed NOAA clips
-        run: python download_noaa.py
       - name: Validate footage and render
         run: python render.py
       - name: Upload finished MP4
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: animals-countdown-15min
-          path: output/animals-countdown-15min.mp4
+          name: 7-most-dangerous-ocean-creatures-15min
+          path: output/7-most-dangerous-ocean-creatures-15min.mp4
           if-no-files-found: error
           retention-days: 14

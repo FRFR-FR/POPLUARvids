@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""Download the 60-shot manifest one clip at a time, with Pixabay candidate fallback.
+"""Download the 42-shot ocean-creature manifest sequentially, with automatic Pixabay fallbacks.
 
-A clip is accepted only after its candidate tags match the requested animal,
-the file downloads, FFmpeg converts it to silent H.264 MP4, and ffprobe verifies it.
-Failed candidates are skipped automatically; the script then advances to the next
-manifest row. No rendering/assembly happens here.
+A candidate is accepted only when its tags identify the requested species, the download
+succeeds, FFmpeg creates a silent H.264 MP4, and ffprobe confirms at least 1280x720.
+One clip is completed before the next manifest row is attempted. This script never renders.
 """
 import csv
 import json
@@ -16,102 +15,93 @@ import time
 import urllib.parse
 import urllib.request
 from pathlib import Path
-from urllib.error import HTTPError, URLError
 
 ROOT = Path(__file__).resolve().parent.parent
 MANIFEST = ROOT / "clip_manifest.csv"
 OUT = ROOT / "output" / "clips"
 API = "https://pixabay.com/api/videos/"
 KEY = os.environ.get("PIXABAY_API_KEY", "").strip()
-USER_AGENT = "POPLUARvids-sequential-footage-downloader/1.0"
-MAX_PAGES = 3
+USER_AGENT = "POPLUARvids-ocean-footage-downloader/2.0"
+MAX_PAGES = 4
 MIN_BYTES = 100_000
 MIN_WIDTH = 1280
+MIN_HEIGHT = 720
 
-def species_for(filename, animal):
-    name = filename.lower()
-    if "jellyfish-squid" in name:
-        if "_3" in name or "_6" in name:
-            return [("jellyfish", ["jellyfish"])]
-        if "_4" in name:
-            return [("giant squid", ["giant squid"])]
-        if "_5" in name:
-            return [("glass squid", ["glass squid", "squid"])]
-        return [("box jellyfish", ["box jellyfish", "box jelly"]), ("giant squid", ["giant squid"])]
-    if "komodo" in name:
-        return [("Komodo dragon", ["komodo dragon", "komodo"])]
-    if "grizzly" in name:
-        return [("grizzly bear", ["grizzly", "brown bear"])]
-    if "african-lion" in name:
-        return [("African lion", ["lion"])]
-    if "bengal-tiger" in name:
-        return [("Bengal tiger", ["bengal tiger", "tiger"])]
-    if "spinosaurus" in name:
-        return [("Spinosaurus", ["spinosaurus"])]
-    if "t-rex" in name:
-        return [("T. rex", ["tyrannosaurus rex", "t rex", "tyrannosaurus"])]
-    if "megalodon" in name:
-        return [("Megalodon", ["megalodon"])]
-    if "great-white" in name:
-        return [("Great white shark", ["great white", "white shark"])]
-    if "saltwater-crocodile" in name:
-        return [("Saltwater crocodile", ["saltwater crocodile", "estuarine crocodile"])]
-    return [(animal, [animal.lower()])]
+SPECIES = {
+    "box jellyfish": ("box jellyfish", ["box jellyfish", "sea wasp"]),
+    "saltwater (estuarine) crocodile": ("saltwater crocodile", ["saltwater crocodile", "estuarine crocodile"]),
+    "great white shark": ("great white shark", ["great white shark", "white shark"]),
+    "bull shark": ("bull shark", ["bull shark"]),
+    "tiger shark": ("tiger shark", ["tiger shark"]),
+    "blue-ringed octopus": ("blue-ringed octopus", ["blue-ringed octopus", "blue ringed octopus"]),
+    "reef stonefish": ("reef stonefish", ["reef stonefish", "stonefish"]),
+}
+
+def normalize(value):
+    value = re.sub(r"[^a-z0-9 ]", " ", (value or "").lower())
+    return " ".join(value.split())
+
+def tag_matches(tags, aliases):
+    normalized_tags = normalize(tags)
+    return any(normalize(alias) in normalized_tags for alias in aliases)
 
 def shot_terms(shot):
     s = shot.lower()
-    if "hook" in s:
-        return "wildlife close up wide shot"
-    if "eyes" in s or "stealth" in s:
-        return "wildlife close up"
-    if "lunge" in s or "movement" in s:
-        return "wildlife moving walking swimming"
-    if "jaws" in s or "teeth" in s:
-        return "animal mouth close up"
-    if "swimming" in s or "approach" in s:
-        return "animal swimming underwater"
-    if "feeding" in s or "prey" in s:
-        return "wildlife feeding natural behaviour"
-    if "tentacles" in s:
-        return "tentacles underwater"
-    if "deep-water" in s:
-        return "deep sea underwater"
-    return "wildlife natural behaviour"
+    if "opening" in s:
+        return "underwater wildlife wide shot"
+    if "close" in s or "details" in s:
+        return "underwater close up"
+    if "movement" in s or "cruising" in s:
+        return "underwater swimming movement"
+    if "camouflage" in s or "habitat" in s:
+        return "ocean habitat reef seafloor"
+    if "behaviour" in s:
+        return "underwater natural behaviour"
+    if "wide" in s:
+        return "underwater wide view"
+    return "underwater wildlife"
 
 def api_search(query, page):
     params = {
-        "key": KEY, "q": query, "per_page": "20", "page": str(page),
-        "safesearch": "true", "video_type": "all", "min_width": str(MIN_WIDTH),
-        "order": "popular"
+        "key": KEY,
+        "q": query,
+        "per_page": "20",
+        "page": str(page),
+        "safesearch": "true",
+        "video_type": "all",
+        "min_width": str(MIN_WIDTH),
+        "order": "popular",
     }
     req = urllib.request.Request(
         API + "?" + urllib.parse.urlencode(params),
-        headers={"User-Agent": USER_AGENT, "Accept": "application/json"}
+        headers={"User-Agent": USER_AGENT, "Accept": "application/json"},
     )
     with urllib.request.urlopen(req, timeout=45) as response:
         if response.status != 200:
             raise RuntimeError(f"Pixabay API HTTP {response.status}")
         return json.loads(response.read().decode("utf-8"))
 
-def tag_matches(tags, aliases):
-    normalized = re.sub(r"[^a-z0-9 ]", " ", (tags or "").lower())
-    normalized = " ".join(normalized.split())
-    return any(" ".join(a.lower().split()) in normalized for a in aliases)
-
 def rendition_for(hit):
     videos = hit.get("videos") or {}
-    options = sorted(videos.items(), key=lambda kv: (kv[1].get("width", 0), kv[1].get("size", 0)), reverse=True)
+    options = sorted(
+        videos.items(),
+        key=lambda kv: (kv[1].get("width", 0), kv[1].get("height", 0), kv[1].get("size", 0)),
+        reverse=True,
+    )
     for _, item in options:
         url = item.get("url", "")
         width = int(item.get("width") or 0)
-        if url and width >= MIN_WIDTH and urllib.parse.urlparse(url).hostname == "cdn.pixabay.com":
+        height = int(item.get("height") or 0)
+        if (url and width >= MIN_WIDTH and height >= MIN_HEIGHT
+                and urllib.parse.urlparse(url).hostname == "cdn.pixabay.com"):
             return item
     return None
 
-def download_candidate(hit, row, destination):
+def download_candidate(hit, destination):
     rendition = rendition_for(hit)
     if not rendition:
-        return False, "No allowed rendition at required resolution"
+        return False, "No allowed rendition at 1280x720 or higher"
+
     source_url = rendition["url"]
     temp = Path("/tmp") / f"pixabay-{hit.get('id')}.source"
     temp.unlink(missing_ok=True)
@@ -128,6 +118,7 @@ def download_candidate(hit, row, destination):
     except Exception as exc:
         temp.unlink(missing_ok=True)
         return False, f"download failed: {type(exc).__name__}: {exc}"
+
     if not temp.exists() or temp.stat().st_size < MIN_BYTES:
         temp.unlink(missing_ok=True)
         return False, "downloaded file too small"
@@ -138,11 +129,12 @@ def download_candidate(hit, row, destination):
         "ffmpeg", "-nostdin", "-hide_banner", "-loglevel", "error", "-y",
         "-i", str(temp), "-an", "-c:v", "libx264", "-preset", "veryfast",
         "-crf", "21", "-pix_fmt", "yuv420p", "-movflags", "+faststart",
-        str(destination)
+        str(destination),
     ]
     converted = subprocess.run(cmd, capture_output=True, text=True)
     temp.unlink(missing_ok=True)
-    if converted.returncode != 0 or not destination.exists() or destination.stat().st_size < MIN_BYTES:
+    if (converted.returncode != 0 or not destination.exists()
+            or destination.stat().st_size < MIN_BYTES):
         destination.unlink(missing_ok=True)
         return False, "FFmpeg conversion failed"
 
@@ -150,7 +142,7 @@ def download_candidate(hit, row, destination):
         ["ffprobe", "-v", "error", "-select_streams", "v:0",
          "-show_entries", "stream=codec_name,width,height",
          "-of", "json", str(destination)],
-        capture_output=True, text=True
+        capture_output=True, text=True,
     )
     try:
         streams = json.loads(probe.stdout).get("streams", [])
@@ -159,18 +151,30 @@ def download_candidate(hit, row, destination):
     if probe.returncode != 0 or not streams:
         destination.unlink(missing_ok=True)
         return False, "ffprobe verification failed"
-    info = streams[0]
-    if info.get("codec_name") != "h264" or int(info.get("width", 0)) < MIN_WIDTH:
-        destination.unlink(missing_ok=True)
-        return False, "verified output did not meet H.264/resolution requirement"
 
-    return True, f"{destination.stat().st_size} bytes; {info['codec_name']} {info['width']}x{info['height']}"
+    info = streams[0]
+    if (info.get("codec_name") != "h264"
+            or int(info.get("width", 0)) < MIN_WIDTH
+            or int(info.get("height", 0)) < MIN_HEIGHT):
+        destination.unlink(missing_ok=True)
+        return False, "output did not meet H.264 / 1280x720 requirement"
+
+    return True, f"{destination.stat().st_size} bytes; H.264 {info['width']}x{info['height']}"
+
+def queries_for(species, aliases, shot):
+    terms = shot_terms(shot)
+    queries = [f"{species} {terms}", species]
+    queries.extend(aliases)
+    return list(dict.fromkeys(queries))
 
 def main():
     if not KEY:
         raise SystemExit("Missing PIXABAY_API_KEY GitHub Actions secret; key value was not printed.")
     with MANIFEST.open(newline="", encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
+    if len(rows) != 42:
+        raise SystemExit(f"Expected 42 ocean-creature clips; found {len(rows)}.")
+
     OUT.mkdir(parents=True, exist_ok=True)
     used_ids = set()
     results = []
@@ -178,63 +182,77 @@ def main():
 
     for index, row in enumerate(rows, 1):
         filename = row["filename"]
+        animal = row["animal"]
         destination = OUT / filename
-        if destination.exists() and destination.stat().st_size >= MIN_BYTES:
-            print(f"[{index}/{total}] Already present and retained: {filename}", flush=True)
-            results.append({"filename": filename, "animal": row["animal"], "status": "already-present", "source": "", "pixabay_id": "", "details": f"{destination.stat().st_size} bytes"})
-            continue
+        species_entry = SPECIES.get(animal.lower())
+        if not species_entry:
+            raise SystemExit(f"No strict species match rule for manifest animal: {animal}")
+        species, aliases = species_entry
 
         accepted = False
-        last_error = "No suitable candidate found"
-        for species, aliases in species_for(filename, row["animal"]):
-            queries = list(dict.fromkeys([f"{species} {shot_terms(row['shot'])}", species] + aliases))
-            for query in queries:
-                for page in range(1, MAX_PAGES + 1):
-                    try:
-                        data = api_search(query, page)
-                    except Exception as exc:
-                        last_error = f"Pixabay search failed: {type(exc).__name__}: {exc}"
-                        print(f"  Search issue for {query} page {page}: {last_error}", flush=True)
-                        continue
-                    candidates = data.get("hits", [])
-                    for hit in candidates:
-                        pid = str(hit.get("id", ""))
-                        if not pid or pid in used_ids:
-                            continue
-                        if not tag_matches(hit.get("tags", ""), aliases):
-                            continue
-                        used_ids.add(pid)
-                        print(f"[{index}/{total}] {filename}: trying {species} candidate {pid}", flush=True)
-                        ok, detail = download_candidate(hit, row, destination)
-                        if not ok:
-                            last_error = detail
-                            print(f"  Candidate {pid} rejected: {detail}; trying next candidate.", flush=True)
-                            continue
+        last_error = "No matching, verified candidate found"
 
-                        source_page = hit.get("pageURL", "")
-                        contributor = hit.get("user", "")
-                        with (OUT / "ATTRIBUTION.txt").open("a", encoding="utf-8") as f:
-                            f.write(
-                                f"File: {filename}\\nRequested animal: {row['animal']}\\n"
-                                f"Shot: {row['shot']}\\nPixabay page: {source_page}\\n"
-                                f"Contributor: {contributor}\\nPixabay ID: {pid}\\n"
-                                f"License: Pixabay Content License (check the linked item page)\\n"
-                                "Changes: converted to silent H.264 MP4.\\n\\n"
-                            )
-                        results.append({"filename": filename, "animal": row["animal"], "status": "downloaded", "source": source_page, "pixabay_id": pid, "details": detail})
-                        print(f"  VERIFIED {filename}: {detail}. Moving to the next manifest item.", flush=True)
-                        accepted = True
-                        break
-                    if accepted:
-                        break
-                    time.sleep(1)
+        if destination.exists():
+            destination.unlink()
+
+        for query in queries_for(species, aliases, row["shot"]):
+            for page in range(1, MAX_PAGES + 1):
+                try:
+                    data = api_search(query, page)
+                except Exception as exc:
+                    last_error = f"Pixabay search failed: {type(exc).__name__}: {exc}"
+                    print(f"  Search issue for {query!r}, page {page}: {last_error}", flush=True)
+                    continue
+
+                for hit in data.get("hits", []):
+                    pid = str(hit.get("id", ""))
+                    if not pid or pid in used_ids:
+                        continue
+                    if not tag_matches(hit.get("tags", ""), aliases):
+                        continue
+
+                    used_ids.add(pid)
+                    print(f"[{index}/{total}] {filename}: trying {species} candidate {pid}", flush=True)
+                    ok, detail = download_candidate(hit, destination)
+                    if not ok:
+                        last_error = detail
+                        print(f"  Candidate {pid} rejected: {detail}; trying the next candidate.", flush=True)
+                        continue
+
+                    source_page = hit.get("pageURL", "")
+                    contributor = hit.get("user", "")
+                    attribution = OUT / "ATTRIBUTION.txt"
+                    with attribution.open("a", encoding="utf-8") as f:
+                        f.write(
+                            f"File: {filename}\n"
+                            f"Animal: {animal}\n"
+                            f"Shot: {row['shot']}\n"
+                            f"Pixabay page: {source_page}\n"
+                            f"Contributor: {contributor}\n"
+                            f"Pixabay ID: {pid}\n"
+                            "License: Pixabay Content License; verify the item page before reuse\n"
+                            "Changes: converted to silent H.264 MP4.\n\n"
+                        )
+                    results.append({
+                        "filename": filename, "animal": animal, "status": "downloaded",
+                        "source": source_page, "pixabay_id": pid, "details": detail,
+                    })
+                    print(f"  VERIFIED {filename}: {detail}. Advancing to the next clip.", flush=True)
+                    accepted = True
+                    break
+
                 if accepted:
                     break
+                time.sleep(0.5)
             if accepted:
                 break
+
         if not accepted:
-            print(f"[{index}/{total}] UNRESOLVED {filename}: {last_error}. Continuing to next clip.", flush=True)
-            results.append({"filename": filename, "animal": row["animal"], "status": "unresolved", "source": "", "pixabay_id": "", "details": last_error})
+            print(f"[{index}/{total}] UNRESOLVED {filename}: {last_error}. Continuing.", flush=True)
+            results.append({
+                "filename": filename, "animal": animal, "status": "unresolved",
+                "source": "", "pixabay_id": "", "details": last_error,
+            })
 
     report_path = OUT / "download_report.csv"
     with report_path.open("w", newline="", encoding="utf-8") as f:
@@ -244,11 +262,14 @@ def main():
         writer.writerows(results)
 
     downloaded = sum(r["status"] == "downloaded" for r in results)
-    present = sum(r["status"] == "already-present" for r in results)
     unresolved = sum(r["status"] == "unresolved" for r in results)
-    print(f"FINAL: {downloaded} newly downloaded, {present} already present, {unresolved} unresolved, of {total} manifest clips.", flush=True)
+    print(
+        f"FINAL: {downloaded} verified downloads, {unresolved} unresolved, "
+        f"of {total} ocean-creature clips.",
+        flush=True,
+    )
     if unresolved:
-        print("Some clips need new candidate sources; all successful downloads are retained in the artifact.", flush=True)
+        print("Successful files are retained in the artifact; unresolved clips need new sources.", flush=True)
         sys.exit(1)
 
 if __name__ == "__main__":

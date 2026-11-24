@@ -1,5 +1,5 @@
-# Strictly sequential: one clip at a time; try fallback Pixabay candidates until one verifies, then move to the next manifest row.
-name: Download all animal footage sequentially
+# Download one ocean-creature clip at a time and retry candidate fallbacks automatically.
+name: Download seven dangerous ocean creatures sequentially
 
 on:
   workflow_dispatch:
@@ -13,9 +13,10 @@ permissions:
   contents: read
   actions: read
 
+# The new commit replaces any queued legacy attempt in this group.
 concurrency:
   group: all-footage-sequential
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   download-all:
@@ -35,24 +36,16 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Restore previously verified clips before retrying unresolved items
-        uses: actions/download-artifact@v4
-        with:
-          name: animal-footage-sequential-downloads
-          run-id: 45336167178
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          path: output/clips
-
-      - name: Download manifest clips one at a time with automatic fallbacks
+      - name: Download all seven species one clip at a time with automatic fallbacks
         env:
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
         run: python scripts/download_manifest_sequential.py
 
-      - name: Upload every successful download and the status report
+      - name: Upload verified ocean clips and the status report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: animal-footage-sequential-downloads
+          name: seven-dangerous-ocean-creatures-footage
           path: output/clips/
           if-no-files-found: warn
           retention-days: 90
@@ -61,7 +54,7 @@ jobs:
         if: always()
         run: |
           if [ -f output/clips/download_report.csv ]; then
-            echo "### Sequential footage download report" >> "$GITHUB_STEP_SUMMARY"
+            echo "### Seven dangerous ocean creatures — footage report" >> "$GITHUB_STEP_SUMMARY"
             cat output/clips/download_report.csv >> "$GITHUB_STEP_SUMMARY"
           else
             echo "No report was produced. Check the download step logs." >> "$GITHUB_STEP_SUMMARY"

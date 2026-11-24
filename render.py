@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render the specified 15-minute silent-footage edit. Requires FFmpeg/ffprobe."""
+"""Render the 15-minute, silent seven-dangerous-ocean-creatures edit."""
 from __future__ import annotations
 import csv, json, subprocess, sys
 from pathlib import Path
@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parent
 MANIFEST = ROOT / "clip_manifest.csv"
 CLIPS = ROOT / "assets" / "clips"
 WORK = ROOT / "build"
-OUT = ROOT / "output" / "animals-countdown-15min.mp4"
+OUT = ROOT / "output" / "7-most-dangerous-ocean-creatures-15min.mp4"
 FPS = 30
 WIDTH, HEIGHT = 1920, 1080
 
@@ -28,10 +28,10 @@ def main():
     with MANIFEST.open(newline="", encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
     missing = [r["filename"] for r in rows if not (CLIPS / r["filename"]).is_file()]
-    if len(rows) != 60:
-        sys.exit(f"Expected 60 manifest entries; found {len(rows)}.")
+    if len(rows) != 42:
+        sys.exit(f"Expected 42 manifest entries; found {len(rows)}.")
     if missing:
-        print("Cannot render: required specified footage is missing:", file=sys.stderr)
+        print("Cannot render: required ocean-creature footage is missing:", file=sys.stderr)
         for name in missing:
             print(f" - assets/clips/{name}", file=sys.stderr)
         sys.exit(2)
@@ -67,7 +67,6 @@ def main():
     actual = probe(OUT)
     if abs(actual - 900.0) > 1.0:
         sys.exit(f"Runtime check failed: expected 900s, got {actual:.2f}s")
-    # Confirm the final file contains no audio streams.
     streams = subprocess.run([
         "ffprobe", "-v", "error", "-show_entries", "stream=codec_type",
         "-of", "json", str(OUT)
