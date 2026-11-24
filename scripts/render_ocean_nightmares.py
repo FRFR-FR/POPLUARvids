@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Build a 15-minute entertainment edit with exact-species footage and Liam narration."""
-import json, os, shutil, subprocess, sys, urllib.parse, urllib.request
+import json, os, shutil, subprocess, sys, time, urllib.error, urllib.parse, urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -10,7 +10,7 @@ W, H, FPS = 1920, 1080, 30
 DURS = {"intro":60,"reef_stonefish":110,"blue_ringed_octopus":110,"box_jellyfish":110,
         "tiger_shark":110,"bull_shark":110,"great_white_shark":110,"saltwater_crocodile":110,"outro":70}
 assert sum(DURS.values()) == 900
-UA = "POPLUARvids OceanNightmares/1.0"
+UA = "POPLUARvids/1.1 (https://github.com/FRFR-FR/POPLUARvids/issues)"
 
 MEDIA = [
  ("Gaboxjellyfish.jpg","box_jellyfish"),
@@ -48,14 +48,32 @@ def info(path):
 def fetch(url,dst):
     if dst.exists() and dst.stat().st_size>20000: return dst
     dst.parent.mkdir(parents=True,exist_ok=True)
-    req=urllib.request.Request(url,headers={"User-Agent":UA})
-    with urllib.request.urlopen(req,timeout=180) as response,dst.open("wb") as f:
-        while True:
-            b=response.read(1024*1024)
-            if not b: break
-            f.write(b)
-    if dst.stat().st_size<20000: raise RuntimeError("Invalid media file: "+dst.name)
-    return dst
+    last_error=None
+    for attempt in range(1,7):
+        try:
+            req=urllib.request.Request(url,headers={"User-Agent":UA,"Accept":"*/*"})
+            with urllib.request.urlopen(req,timeout=180) as response,dst.open("wb") as f:
+                while True:
+                    b=response.read(1024*1024)
+                    if not b: break
+                    f.write(b)
+            if dst.stat().st_size<20000: raise RuntimeError("Invalid media file: "+dst.name)
+            return dst
+        except urllib.error.HTTPError as exc:
+            last_error=exc
+            dst.unlink(missing_ok=True)
+            if exc.code not in (429,503):
+                raise
+            retry=exc.headers.get("Retry-After")
+            try: wait=max(5,int(retry)) if retry else min(60,5*attempt)
+            except ValueError: wait=min(60,5*attempt)
+            print(f"Rate-limited by Wikimedia; respecting retry delay of {wait}s.",flush=True)
+            time.sleep(wait)
+        except Exception as exc:
+            last_error=exc
+            dst.unlink(missing_ok=True)
+            time.sleep(min(30,3*attempt))
+    raise RuntimeError(f"Could not fetch {url} after retries: {last_error}")
 
 def find_file(folder,name):
     hits=list(folder.rglob(name)) if folder.exists() else []
@@ -72,6 +90,7 @@ def get_assets():
             print("Ready:",filename,flush=True)
         except Exception as exc:
             print("Optional source unavailable:",filename,str(exc),flush=True)
+        time.sleep(5)
     for filename,animal in [
       ("31_blue-ringed-octopus_hook.mp4","blue_ringed_octopus"),
       ("13_great-white-shark_hook.mp4","great_white_shark"),
