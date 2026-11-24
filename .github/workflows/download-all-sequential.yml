@@ -11,6 +11,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: all-footage-sequential
@@ -33,6 +34,14 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
+      - name: Restore previously verified clips before retrying unresolved items
+        uses: actions/download-artifact@v4
+        with:
+          name: animal-footage-sequential-downloads
+          run-id: 45336167178
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: output/clips
 
       - name: Download manifest clips one at a time with automatic fallbacks
         env:
