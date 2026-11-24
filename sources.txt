@@ -134,11 +134,10 @@ NOAA Ocean Exploration media is generally public domain as U.S. government work;
 
 VOICE
 -----
-Requested voice: ElevenLabs default voice “Liam”.
-Voice ID: TX3LPaxmHKxFdv7VOQHJ.
-Official documentation:
-https://elevenlabs.io/docs/help-center/product/voices/my-voices/what-are-default-voices
-ElevenLabs states default voices are available only to accounts created before March 2026 and are scheduled to expire on 31 December 2026. The build checks the connected ElevenLabs account for the actual Liam voice and does not silently substitute another voice.
+Requested narrator: Liam.
+The video edit uses an already-recorded Liam voiceover supplied to the project by the user or authorised narrator.
+Expected input filename: assets/audio/liam_voiceover.mp3 (or assets/audio/liam_voiceover.wav).
+The render workflow does not generate, clone, or substitute a voice. The recording must be supplied with permission for this video.
 
 EDITING NOTES
 -------------
