@@ -1,0 +1,62 @@
+name: Render Ocean Nightmares — 7 Most Dangerous Creatures
+on:
+  push:
+    branches:
+      - ocean-nightmares-production
+    paths:
+      - "narration.json"
+      - "sources.txt"
+      - "scripts/render_ocean_nightmares.py"
+      - ".github/workflows/render-ocean-nightmares.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: ocean-nightmares-production
+  cancel-in-progress: false
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Check out the production branch
+        uses: actions/checkout@v4
+
+      - name: Install FFmpeg and fonts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-dejavu-core
+
+      - name: Download verified seven-creature Pixabay footage
+        uses: actions/download-artifact@v4
+        with:
+          name: seven-dangerous-ocean-creatures-footage
+          run-id: 45343962122
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: downloads/pixabay
+
+      - name: Download verified NOAA ocean footage
+        uses: actions/download-artifact@v4
+        with:
+          name: supplemental-noaa-jellyfish-squid
+          run-id: 45341771700
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: downloads/noaa
+
+      - name: Build 15-minute video using Liam
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+        run: python scripts/render_ocean_nightmares.py
+
+      - name: Upload finished video, separate credits and build report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ocean-nightmares-video-and-sources
+          path: production_output/
+          if-no-files-found: warn
+          retention-days: 90
