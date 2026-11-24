@@ -1,0 +1,151 @@
+7 MOST DANGEROUS CREATURES IN THE OCEAN
+Production source notes
+===================================
+
+Credits and links are kept here and are NOT shown in the video. The video contains only its title and animal chapter labels.
+
+FACT CHECK / SCRIPT REFERENCES
+------------------------------
+NOAA Ocean Service — What is the most venomous marine animal? (Australian box jellyfish)
+https://oceanservice.noaa.gov/facts/box-jellyfish.html
+
+NSW Health, Emergency Care Institute — Venomous marine stings (box jellyfish, blue-ringed octopus and stonefish)
+https://aci.health.nsw.gov.au/networks/eci/clinical/tools/venomous-marine-stings
+
+Fishes of Australia — Reef Stonefish, Synanceia verrucosa (camouflage and venomous dorsal spines)
+https://fishesofaustralia.net.au/home/species/3341
+
+Australian Museum — Bull Shark, Carcharhinus leucas
+https://australian.museum/learn/animals/fishes/bull-shark-carcharhinus-leucas-valenciennes-1839/
+
+Florida Museum of Natural History — International Shark Attack File: species implicated
+https://www.floridamuseum.ufl.edu/shark-attacks/factors/species-implicated/
+
+MEDIA USED / PLANNED
+--------------------
+BOX JELLYFISH
+1. Alatina alata swimming Johnoson Sea Link near the Bahamas.ogv
+   Creator: Allen Collins; Smithsonian National Museum of Natural History specimen video.
+   Wikimedia Commons file page:
+   https://commons.wikimedia.org/wiki/File:Alatina_alata_swimming_Johnoson_Sea_Link_near_the_Bahamas.ogv
+   Licence: Creative Commons Attribution 3.0 (CC BY 3.0).
+   Note: This is Alatina alata, a box jellyfish; original file is low-resolution (192x144), used only as a brief genuine-motion insert.
+
+2. Gaboxjellyfish.jpg
+   Wikimedia Commons file page:
+   https://commons.wikimedia.org/wiki/File:Gaboxjellyfish.jpg
+   Licence: Creative Commons Attribution 3.0 (CC BY 3.0).
+   Used as a still with slow camera movement.
+
+SALTWATER CROCODILE
+3. Jumping crocodile adelaide river australia.ogv
+   Creator: Mutante / Daniel Zahn; saltwater crocodile (Crocodylus porosus), Adelaide River, Australia.
+   Wikimedia Commons file page:
+   https://commons.wikimedia.org/wiki/File:Jumping_crocodile_adelaide_river_australia.ogv
+   Licence: Creative Commons Attribution-ShareAlike 3.0 (CC BY-SA 3.0).
+   Changes: trimmed, muted, cropped/resized and colour adjusted.
+
+4. Feeding a saltwater crocodile (Crocodylus porosus).webm
+   Creator: Fernanda; Madras Crocodile Bank Trust, India.
+   Wikimedia Commons file page:
+   https://commons.wikimedia.org/wiki/File:Feeding_a_saltwater_crocodile_(Crocodylus_porosus).webm
+   Licence: Creative Commons Attribution 3.0 (CC BY 3.0).
+   Changes: trimmed, muted, cropped/resized and colour adjusted.
+
+GREAT WHITE SHARK
+5. Cage diving with great white sharks.webm
+   Creator: Michael Pritchett; drone footage by Tak Tang; Guadalupe Island, Mexico.
+   Wikimedia Commons file page:
+   https://commons.wikimedia.org/wiki/File:Cage_diving_with_great_white_sharks.webm
+   Licence: Creative Commons Attribution 3.0 (CC BY 3.0).
+   Changes: trimmed, muted, cropped/resized and colour adjusted.
+
+6. Great white shark as seen from a cage.webm
+   Wikimedia Commons file page:
+   https://commons.wikimedia.org/wiki/File:Great_white_shark_as_seen_from_a_cage.webm
+   Licence: Creative Commons Attribution 3.0 (CC BY 3.0).
+   Changes: trimmed, muted, cropped/resized and colour adjusted.
+
+7. Existing Pixabay clips from the verified seven-creature download artifact:
+   Files: 13_great-white-shark_hook.mp4 and 14_great-white-shark_closeup.mp4.
+   The exact creator and item-page URLs are copied from the downloaded artifact's ATTRIBUTION.txt into this file when the render workflow runs.
+
+BULL SHARK
+8. Bull sharks (Carcharhinus leucas) in Mexico.webm
+   Creator: Allan Robusky; Playa del Carmen, Mexico.
+   Wikimedia Commons file page:
+   https://commons.wikimedia.org/wiki/File:Bull_sharks_(Carcharhinus_leucas)_in_Mexico.webm
+   Licence: Creative Commons Attribution 3.0 (CC BY 3.0).
+   Changes: trimmed, muted, cropped/resized and colour adjusted.
+
+TIGER SHARK
+9. Tiger shark (Galeocerdo cuvier) in the Bahamas in 2017.webm
+   Wikimedia Commons file page:
+   https://commons.wikimedia.org/wiki/File:Tiger_shark_(Galeocerdo_cuvier)_in_the_Bahamas_in_2017.webm
+   Licence: Creative Commons Attribution 3.0 (CC BY 3.0).
+   Changes: trimmed, muted, cropped/resized and colour adjusted.
+
+10. Tiger shark (Galeocerdo cuvier) in Fiji.webm
+    Creator: Christian Townsend.
+    Wikimedia Commons file page:
+    https://commons.wikimedia.org/wiki/File:Tiger_shark_(Galeocerdo_cuvier)_in_Fiji.webm
+    Licence: Creative Commons Attribution 3.0 (CC BY 3.0).
+    Changes: trimmed, muted, cropped/resized and colour adjusted.
+
+BLUE-RINGED OCTOPUS
+11. Pixabay clip from the verified seven-creature download artifact:
+    File: 31_blue-ringed-octopus_hook.mp4; Pixabay ID 332342.
+    Creator and exact item-page URL are copied from the downloaded artifact's ATTRIBUTION.txt when the render workflow runs.
+
+12. Blue-ringed octopus.jpg
+    Creator: Shaymary.
+    Wikimedia Commons file page:
+    https://commons.wikimedia.org/wiki/File:Blue-ringed_octopus.jpg
+    Licence: CC0 1.0 (public-domain dedication).
+
+REEF STONEFISH
+13. Synanceia verrucosa 26195372.jpg
+    Photographer: Valentin Moser; reef stonefish in Egypt.
+    Wikimedia Commons file page:
+    https://commons.wikimedia.org/wiki/File:Synanceia_verrucosa_26195372.jpg
+    Licence: Creative Commons Attribution 4.0 (CC BY 4.0).
+
+14. Synanceia verrucosa 49756178.jpg
+    Photographer: Dan Schofield; reef stonefish in the Philippines.
+    Wikimedia Commons file page:
+    https://commons.wikimedia.org/wiki/File:Synanceia_verrucosa_49756178.jpg
+    Licence: Creative Commons Attribution 4.0 (CC BY 4.0).
+
+GENERAL OPEN-OCEAN / TRANSITION FOOTAGE (NOT MISLABELLED AS A SPECIFIC ANIMAL)
+----------------------------------------------------------------------------------
+Five NOAA Ocean Exploration clips downloaded and verified in a separate sequential batch:
+- noaa_jellyfish_cyanea.mp4
+  https://oceanexplorer.noaa.gov/multimedia/video-playlist-invert-jellyfish/
+- noaa_jellyfish_crossota.mp4
+  https://oceanexplorer.noaa.gov/multimedia/video-playlist-best-jellyfish/
+- noaa_jellies_glass_squid.mp4
+  https://oceanexplorer.noaa.gov/multimedia/okeanos-explorations-seascape-alaska-ex2304-gallery-media-dive01-unexplored-planet/
+- noaa_squid_illex.mp4
+  https://oceanexplorer.noaa.gov/multimedia/okeanos-explorations-ex2107-gallery-media-dive09-mollusk-monday/
+- noaa_deepsea_jellies_squid.mp4
+  https://oceanexplorer.noaa.gov/multimedia/video-playlist-ex1708-hiding-dark/
+
+NOAA Ocean Exploration media is generally public domain as U.S. government work; retain NOAA and expedition credits from the source pages. These clips are used only as general ocean / jellyfish / squid atmosphere or transitions, not as footage of box jellyfish, sharks, crocodiles, octopus or stonefish.
+
+VOICE
+-----
+Requested voice: ElevenLabs default voice “Liam”.
+Voice ID: TX3LPaxmHKxFdv7VOQHJ.
+Official documentation:
+https://elevenlabs.io/docs/help-center/product/voices/my-voices/what-are-default-voices
+ElevenLabs states default voices are available only to accounts created before March 2026 and are scheduled to expire on 31 December 2026. The build checks the connected ElevenLabs account for the actual Liam voice and does not silently substitute another voice.
+
+EDITING NOTES
+-------------
+- All animal video clips are muted before the new narration and soundtrack are mixed.
+- Clips are trimmed, cropped/resized to 1920x1080, 30 fps, and colour-adjusted for a dark cinematic look.
+- Still photos are given slow pan/zoom movement. They are clearly still-image sequences, not presented as moving footage.
+- No sources, licence notices or technical explanations are shown inside the video.
+- Every media item is attributed here; the generated build appends the exact Pixabay contributor URLs from its artifact metadata.
+- No AI-generated animal images or 3D animal visualisations are used.
+- CC BY-SA 3.0 applies to the crocodile jumping clip; reuse of an adapted version must comply with its ShareAlike condition. All other licences are listed above.
