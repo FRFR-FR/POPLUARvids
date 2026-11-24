@@ -1,3 +1,4 @@
+# Strictly sequential: one clip at a time; try fallback Pixabay candidates until one verifies, then move to the next manifest row.
 name: Download all animal footage sequentially
 
 on:
