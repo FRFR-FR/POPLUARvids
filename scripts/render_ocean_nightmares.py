@@ -7,8 +7,6 @@ ROOT = Path(__file__).resolve().parents[1]
 WORK = ROOT / "ocean_build"
 OUT = ROOT / "production_output"
 W, H, FPS = 1920, 1080, 30
-VOICE_API = "https://api.elevenlabs.io/v1"
-LIAM_ID = "TX3LPaxmHKxFdv7VOQHJ"
 DURS = {"intro":60,"reef_stonefish":110,"blue_ringed_octopus":110,"box_jellyfish":110,
         "tiger_shark":110,"bull_shark":110,"great_white_shark":110,"saltwater_crocodile":110,"outro":70}
 assert sum(DURS.values()) == 900
@@ -149,42 +147,19 @@ def make_scene(slug,assets,seconds,title):
          "-an","-c:v","libx264","-preset","veryfast","-crf","20","-r","30","-pix_fmt","yuv420p",final])
     return final
 
-def get_liam():
-    key=os.environ.get("ELEVENLABS_API_KEY","").strip()
-    if not key: raise RuntimeError("Missing ELEVENLABS_API_KEY GitHub secret. Liam narration was not replaced.")
-    req=urllib.request.Request(VOICE_API+"/voices",headers={"xi-api-key":key,"Accept":"application/json"})
-    with urllib.request.urlopen(req,timeout=60) as r: voices=json.loads(r.read().decode()).get("voices",[])
-    voice=next((v for v in voices if v.get("voice_id")==LIAM_ID),None)
-    if not voice: voice=next((v for v in voices if (v.get("name") or "").lower()=="liam"),None)
-    if not voice: raise RuntimeError("Liam is not available in the connected ElevenLabs account. No alternate voice was used.")
-    return key,voice["voice_id"],voice.get("name","Liam")
-
-def create_audio(narration,key,voice_id):
-    folder=WORK/"audio";folder.mkdir(parents=True,exist_ok=True)
-    sections=[]
-    for scene in narration:
-        mp3=folder/(scene["id"]+".mp3")
-        payload={"text":scene["text"],"model_id":"eleven_multilingual_v2",
-                 "voice_settings":{"stability":0.43,"similarity_boost":0.82,"style":0.42,
-                                   "use_speaker_boost":True,"speed":0.92}}
-        req=urllib.request.Request(VOICE_API+"/text-to-speech/"+voice_id+"?output_format=mp3_44100_128",
-            data=json.dumps(payload).encode(),headers={"xi-api-key":key,"Content-Type":"application/json",
-            "Accept":"audio/mpeg"},method="POST")
-        with urllib.request.urlopen(req,timeout=180) as r: mp3.write_bytes(r.read())
-        length,_=info(mp3)
-        target=DURS[scene["id"]]
-        if length>target-1: raise RuntimeError("Liam voice section exceeds its planned scene: "+scene["id"])
-        wav=folder/(scene["id"]+".wav")
-        run(["ffmpeg","-nostdin","-hide_banner","-loglevel","error","-y","-i",mp3,
-             "-af","loudnorm=I=-17:TP=-1.5:LRA=7,apad","-t",target,
-             "-ar","48000","-ac","2","-c:a","pcm_s16le",wav])
-        sections.append(wav)
-        print("Narration ready:",scene["id"],flush=True)
-    listing=folder/"voice.txt"
-    listing.write_text("".join("file '"+p.as_posix()+"'\n" for p in sections),encoding="utf-8")
-    voice=folder/"voice.wav"
-    run(["ffmpeg","-nostdin","-hide_banner","-loglevel","error","-y","-f","concat","-safe","0","-i",listing,
-         "-t","900","-ar","48000","-ac","2","-c:a","pcm_s16le",voice])
+def mix_audio(voice_file):
+    """Use an already-recorded Liam voiceover; no text-to-speech or voice cloning."""
+    folder=WORK/"audio"
+    folder.mkdir(parents=True,exist_ok=True)
+    length,streams=info(voice_file)
+    if not any(s.get("codec_type")=="audio" for s in streams):
+        raise RuntimeError("The supplied Liam file has no audio stream.")
+    if length>900.5:
+        raise RuntimeError(f"Liam's recording is {length:.1f}s; it is longer than the 15-minute edit.")
+    voice=folder/"voice_15min.wav"
+    run(["ffmpeg","-nostdin","-hide_banner","-loglevel","error","-y","-i",voice_file,
+         "-af","loudnorm=I=-17:TP=-1.5:LRA=7,apad","-t","900","-ar","48000","-ac","2",
+         "-c:a","pcm_s16le",voice])
     bed=folder/"ambience.wav"
     mixfilter=("[0:a]lowpass=f=80,volume=0.18[a];[1:a]lowpass=f=140,volume=0.12[b];"
                "[2:a]lowpass=f=520,volume=0.12[c];[a][b][c]amix=inputs=3:normalize=0,"
@@ -203,7 +178,6 @@ def create_audio(narration,key,voice_id):
 def main():
     OUT.mkdir(parents=True,exist_ok=True);WORK.mkdir(parents=True,exist_ok=True)
     narration=json.loads((ROOT/"narration.json").read_text(encoding="utf-8"))
-    key,voice_id,voice_name=get_liam()
     assets=get_assets()
     montage=assets.get("general_ocean",[])
     for k in ["box_jellyfish","blue_ringed_octopus","tiger_shark","bull_shark","great_white_shark","saltwater_crocodile"]:
@@ -225,7 +199,33 @@ def main():
     run(["ffmpeg","-nostdin","-hide_banner","-loglevel","error","-y","-f","concat","-safe","0","-i",playlist,
          "-t","900","-an","-c:v","libx264","-preset","medium","-crf","21","-r","30",
          "-pix_fmt","yuv420p",silent])
-    audio=create_audio(narration,key,voice_id)
+    preview=OUT/"15-minute-visual-edit-silent-preview.mp4"
+    shutil.copy2(silent,preview)
+    shutil.copy2(ROOT/"sources.txt",OUT/"sources.txt")
+    attrs=list((ROOT/"downloads"/"pixabay").rglob("ATTRIBUTION.txt"))
+    if attrs:
+        with (OUT/"sources.txt").open("a",encoding="utf-8") as f:
+            f.write("\n\nEXACT PIXABAY CLIP ATTRIBUTION\n")
+            for p in attrs:f.write(p.read_text(encoding="utf-8",errors="replace")+"\n")
+    voice_file=ROOT/"assets"/"audio"/"liam_voiceover.mp3"
+    if not voice_file.exists():
+        voice_file=ROOT/"assets"/"audio"/"liam_voiceover.wav"
+    if not voice_file.exists():
+        note=("VISUAL EDIT READY — LIAM AUDIO NEEDED\n"
+              "The 15-minute visual edit has been assembled without sound.\n"
+              "To finish the requested version, add an already-recorded, authorised Liam voiceover as "
+              "assets/audio/liam_voiceover.mp3 or assets/audio/liam_voiceover.wav, then run this workflow again.\n"
+              "No replacement voice was generated.\n")
+        (OUT/"NEEDS_LIAM_AUDIO.txt").write_text(note,encoding="utf-8")
+        report=("VISUAL EDIT READY (SILENT PREVIEW ONLY)\n"
+                "File: "+preview.name+"\nRuntime: 900 seconds (15:00)\n"
+                "Resolution: 1920x1080, 30 fps\n"
+                "The final narration mix is waiting for the Liam voice recording.\n"
+                "Sources and credits are in sources.txt; none are shown on-screen.\n")
+        (OUT/"render_report.txt").write_text(report,encoding="utf-8")
+        print(report,flush=True)
+        return
+    audio=mix_audio(voice_file)
     video=OUT/"7-most-dangerous-creatures-in-the-ocean.mp4"
     run(["ffmpeg","-nostdin","-hide_banner","-loglevel","error","-y","-i",silent,"-i",audio,
          "-map","0:v:0","-map","1:a:0","-t","900","-c:v","copy","-c:a","aac",
@@ -235,20 +235,14 @@ def main():
     a=next((x for x in streams if x.get("codec_type")=="audio"),{})
     if abs(length-900)>0.8 or v.get("codec_name")!="h264" or a.get("codec_name")!="aac" or (v.get("width"),v.get("height"))!=(W,H):
         raise RuntimeError("Final video failed duration, resolution or codec validation.")
-    shutil.copy2(ROOT/"sources.txt",OUT/"sources.txt")
-    attrs=list((ROOT/"downloads"/"pixabay").rglob("ATTRIBUTION.txt"))
-    if attrs:
-        with (OUT/"sources.txt").open("a",encoding="utf-8") as f:
-            f.write("\n\nEXACT PIXABAY CLIP ATTRIBUTION\n")
-            for p in attrs:f.write(p.read_text(encoding="utf-8",errors="replace")+"\n")
     size=video.stat().st_size
     report=(f"SUCCESS\nVideo: {video.name}\nRuntime: {length:.2f} seconds\n"
-            f"Resolution: {W}x{H}, {FPS} fps\nVideo: H.264\nAudio: AAC with {voice_name} narration and original-source audio muted\n"
+            f"Resolution: {W}x{H}, {FPS} fps\nVideo: H.264\nAudio: AAC; supplied Liam recording with original-source audio muted\n"
             f"File size: {size:,} bytes ({size/1_000_000:.2f} MB)\n"
             "Sources/credits: separate sources.txt; no citations shown on-screen.\n"
             "Some scenes use real still photographs with slow camera movement where motion footage is limited.\n")
     (OUT/"render_report.txt").write_text(report,encoding="utf-8")
-    (OUT/"voice_report.txt").write_text(f"Voice: {voice_name}\nVoice ID: {voice_id}\n",encoding="utf-8")
+    (OUT/"voice_report.txt").write_text(f"Voice source: {voice_file.name}\n",encoding="utf-8")
     print(report,flush=True)
 
 if __name__=="__main__":
