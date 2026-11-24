@@ -1,0 +1,41 @@
+name: Download supplemental NOAA jellyfish and squid clips
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "scripts/download_noaa_supplemental.py"
+      - ".github/workflows/download-noaa-supplemental.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supplemental-noaa-sequential
+  cancel-in-progress: false
+
+jobs:
+  download-noaa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Download and verify NOAA clips one at a time
+        run: python scripts/download_noaa_supplemental.py
+      - name: Upload verified NOAA clips and report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: supplemental-noaa-jellyfish-squid
+          path: output/noaa-clips/
+          if-no-files-found: warn
+          retention-days: 90
