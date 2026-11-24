@@ -1,0 +1,59 @@
+name: Render Ocean Creatures — 720p version
+
+on:
+  push:
+    branches:
+      - ocean-nightmares-production
+    paths:
+      - "scripts/render_ocean_nightmares_720p.py"
+      - ".github/workflows/render-ocean-nightmares-720p.yml"
+
+permissions:
+  contents: read
+  actions: read
+
+# Separate concurrency group: this render must never cancel the 1080p render.
+concurrency:
+  group: ocean-nightmares-720p-production
+  cancel-in-progress: false
+
+jobs:
+  render-720p:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Check out the production branch
+        uses: actions/checkout@v4
+
+      - name: Install FFmpeg and fonts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-dejavu-core
+
+      - name: Download the same seven-creature Pixabay footage
+        uses: actions/download-artifact@v4
+        with:
+          name: seven-dangerous-ocean-creatures-footage
+          run-id: 45343962122
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: downloads/pixabay
+
+      - name: Download the same NOAA ocean footage
+        uses: actions/download-artifact@v4
+        with:
+          name: supplemental-noaa-jellyfish-squid
+          run-id: 45341771700
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: downloads/noaa
+
+      - name: Assemble the 15-minute 720p visual edit
+        run: python scripts/render_ocean_nightmares_720p.py
+
+      - name: Upload 720p video, separate sources and build report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ocean-nightmares-720p-video-and-sources
+          path: production_output/
+          if-no-files-found: warn
+          retention-days: 90
